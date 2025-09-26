@@ -29,11 +29,11 @@ The program will first print a summary of how many unique, non-degenerate towers
 
 It will then display the plots for each unique tower one by one. You must close a plot window to proceed to the next one.
 
-Additionally, it will save each tower's plot as a PNG file in the project directory (e.g., `tower_1.png`, `tower_2.png`, etc.).
+Additionally, it will save each tower's plot as a PNG file in the `images/` directory (e.g., `images/tower_1.png`).
 
 ## Example Towers
 
-Below are the 10 unique, non-degenerate towers found for the default case (a 30-120-30 degree triangle with a 60-degree trajectory angle).
+Below are the 10 unique, non-degenerate towers found for a **12-42-126** degree triangle with a **50-degree** trajectory angle.
 
 *(Note: The number of towers generated will vary depending on the input parameters.)*
 
@@ -48,3 +48,9 @@ Below are the 10 unique, non-degenerate towers found for the default case (a 30-
 | ![Tower 7](images/tower_7.png) | ![Tower 8](images/tower_8.png) |
 | **Tower 9** | **Tower 10** |
 | ![Tower 9](images/tower_9.png) | ![Tower 10](images/tower_10.png) |
+
+## Additional Example
+
+Here is an additional example for a **30-120-30** degree triangle with a **60-degree** trajectory angle.
+
+![Example Output](images/example.png)
