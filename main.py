@@ -1,35 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def orientation(p, q, r):
-    val = (q[1] - p[1]) * (r[0] - q[0]) - \
-          (q[0] - p[0]) * (r[1] - q[1])
-    if abs(val) < 1e-9: return 0
-    return 1 if val > 0 else 2
-
-def on_segment(p, q, r):
-    if (q[0] <= max(p[0], r[0]) and q[0] >= min(p[0], r[0]) and
-        q[1] <= max(p[1], r[1]) and q[1] >= min(p[1], r[1])):
-        return True
-    return False
-
-def segments_intersect(p1, q1, p2, q2):
-    o1 = orientation(p1, q1, p2)
-    o2 = orientation(p1, q1, q2)
-    o3 = orientation(p2, q2, p1)
-    o4 = orientation(p2, q2, q1)
-
-    if (o1 != o2 and o3 != o4): 
-        return True
-    if (o1 == 0 and on_segment(p1, p2, q1)): return True
-    if (o2 == 0 and on_segment(p1, q2, q1)): return True
-    if (o3 == 0 and on_segment(p2, p1, q2)): return True
-    if (o4 == 0 and on_segment(p2, q1, q2)): return True
-    return False
-
 def obtain_angles_period():
     print("--- Billiards Trajectory Simulator ---")
-    
     while True:
         try:
             angles_str = input("Enter two angles of the triangle (in degrees), separated by a comma > ")
@@ -41,8 +14,7 @@ def obtain_angles_period():
         except (ValueError, IndexError):
             print("Invalid input. Please enter two numbers separated by a comma.")
 
-    alpha_rad = alpha * np.pi / 180
-    beta_rad = beta * np.pi / 180
+    alpha_rad, beta_rad = np.deg2rad(alpha), np.deg2rad(beta)
     gamma_rad = np.pi - (alpha_rad + beta_rad)
 
     while True:
@@ -52,8 +24,7 @@ def obtain_angles_period():
             break
         except ValueError:
             print("Invalid input. Please enter a number.")
-    
-    phi_rad = phi * np.pi / 180
+    phi_rad = np.deg2rad(phi)
 
     while True:
         try:
@@ -69,116 +40,131 @@ def obtain_angles_period():
     print("------------------------------------")
     return (alpha_rad, beta_rad, gamma_rad, phi_rad, n)
 
+def get_line_segment_intersection(p1, p2, p3, p4):
+    x1, y1 = p1
+    x2, y2 = p2
+    x3, y3 = p3
+    x4, y4 = p4
+
+    den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    if den == 0:
+        return None  # Parallel
+
+    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+    u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den
+
+    if 0 < t < 1 and u > 0: # Intersection must be strictly within the segment
+        return np.array([x1 + t * (x2 - x1), y1 + t * (y2 - y1)])
+    return None
+
+def reflect_point(p, p1, p2):
+    # Reflect point p across the line defined by p1 and p2
+    dx = p2[0] - p1[0]
+    dy = p2[1] - p1[1]
+    a = (dx**2 - dy**2) / (dx**2 + dy**2)
+    b = 2 * dx * dy / (dx**2 + dy**2)
+    x_reflected = a * (p[0] - p1[0]) + b * (p[1] - p1[1]) + p1[0]
+    y_reflected = b * (p[0] - p1[0]) - a * (p[1] - p1[1]) + p1[1]
+    return np.array([x_reflected, y_reflected])
+
+def trace_trajectory(b, n, initial_triangle, initial_angles, phi0):
+    path = [{'vertices': initial_triangle, 'iter': 0}]
+    current_triangle = initial_triangle
+    current_angles = initial_angles
+
+    tan_phi0 = np.tan(phi0)
+    if tan_phi0 == 0:
+        return [] # Horizontal trajectory not handled
+
+    # Define a very long line for the trajectory to ensure it crosses the whole figure
+    traj_p1 = np.array([b, 0])
+    traj_p2 = np.array([(1000 + tan_phi0 * b) / tan_phi0, 1000])
+
+    for i in range(n):
+        A, B, C = current_triangle
+        alpha, beta, gamma = current_angles
+
+        # Check for exit point on AC
+        intersect_ac = get_line_segment_intersection(A, C, traj_p1, traj_p2)
+        # Check for exit point on BC
+        intersect_bc = get_line_segment_intersection(B, C, traj_p1, traj_p2)
+
+        if intersect_ac is not None:
+            B_reflected = reflect_point(B, A, C)
+            current_triangle = np.array([C, A, B_reflected])
+            current_angles = (gamma, alpha, beta)
+            path.append({'vertices': current_triangle, 'iter': i + 1})
+        elif intersect_bc is not None:
+            A_reflected = reflect_point(A, B, C)
+            current_triangle = np.array([B, C, A_reflected])
+            current_angles = (beta, gamma, alpha)
+            path.append({'vertices': current_triangle, 'iter': i + 1})
+        else:
+            # Path does not exit through AC or BC, terminates
+            break
+            
+    return path
+
 def evolution(alpha, beta, gamma, phi, n):
-    # First triangle
     A = np.array([0,0])
     B = np.array([np.sin(gamma) / (np.sin(alpha) + np.sin(beta) + np.sin(gamma)), 0])
-    C = np.sin(beta) / (np.sin(alpha) + np.sin(beta) + np.sin(gamma)) \
-            * np.array([np.cos(alpha), np.sin(alpha)])
-    # Storing for later
+    C = np.sin(beta) / (np.sin(alpha) + np.sin(beta) + np.sin(gamma)) * np.array([np.cos(alpha), np.sin(alpha)])
     x, phi0 = B[0], phi
-
     initial_triangle = np.vstack((A,B,C))
+    initial_angles = (alpha, beta, gamma)
 
-    # We will store all generated polygons here, with their iteration number
-    all_polygons = []
-    all_polygons.append({'vertices': initial_triangle, 'iter': 0})
+    x_interval = np.linspace(0, x, 100)
+    found_towers = []
+    tower_data = []
 
-
-    triangle_list = [[(initial_triangle, (alpha, beta, gamma), phi)]]
-    # And the next triangles
-    for ii in range(n):
-        m = []
-        # For each triangle in the end of the queue, we must check
-        # which reflections are generated, given the trajectory.
-        if not triangle_list[-1]: break
-        for triangle in triangle_list[-1]:
-            A, B, C = triangle[0]
-            alpha, beta, gamma = triangle[1]
-            phi = triangle[2]
-            if phi > alpha:
-                v = (A - B) - np.dot(A - B, A - C) / np.linalg.norm(A - C) ** 2 * (A - C)
-                v = v / np.linalg.norm(v)
-                new_triangle = np.vstack((C, A, B + 2 * np.linalg.norm(A - B) * np.sin(alpha) * v))
-
-                all_polygons.append({'vertices': new_triangle, 'iter': ii + 1})
-                m.append((new_triangle, (gamma, alpha, beta), np.pi+alpha-phi))
-
-            if phi < np.pi - beta:
-                v = (C - A) - np.dot(C - A, C - B) / np.linalg.norm(C - B) ** 2 * (C - B)
-                v = v / np.linalg.norm(v)
-                new_triangle = np.vstack((B, C, A + 2 * np.linalg.norm(A - B) * np.sin(beta) * v))
-
-                all_polygons.append({'vertices': new_triangle, 'iter': ii + 1})
-                m.append((new_triangle, (beta, gamma, alpha), np.pi-beta-phi))
-
-        triangle_list.append(m)
-
-    # Finding y_max to plot trajectory lines
-    y_max = 0
-    if all_polygons:
-        y_max = max(poly['vertices'][:,1].max() for poly in all_polygons)
-
-
-    # Now, filter the polygons that intersect with the trajectory lines
-    intersected_polygons = []
-    tan_phi0 = np.tan(phi0)
-    x_interval = np.linspace(0, x, 10)
-    border_bs = [x_interval[0], x_interval[-1]]
-
-    for poly in all_polygons:
-        vertices = poly['vertices']
-        edges = [(vertices[0], vertices[1]), (vertices[1], vertices[2]), (vertices[2], vertices[0])]
-
-        intersection_found = False
-        for b in border_bs:
-            m = tan_phi0
-            if m == 0: continue
-
-            T1 = (b, 0)
-            T2 = (y_max / m + b, y_max)
-            
-            for p1, p2 in edges:
-                if segments_intersect(p1, p2, T1, T2):
-                    intersected_polygons.append(poly)
-                    intersection_found = True
-                    break
-            if intersection_found:
-                break
-    
-    # The first polygon should always be plotted
-    if all_polygons and all_polygons[0] not in intersected_polygons:
-        intersected_polygons.insert(0, all_polygons[0])
-
-    # Remove duplicates by creating a new list
-    unique_polygons = []
-    seen_ids = set()
-    for poly in intersected_polygons:
-        rounded_vertices = np.round(poly['vertices'], decimals=6)
-        poly_id = tuple(sorted(tuple(map(tuple, rounded_vertices))))
-        if poly_id not in seen_ids:
-            unique_polygons.append(poly)
-            seen_ids.add(poly_id)
-
-
-    # Now plot everything
-    plt.figure(111)
-
-    # Plot the intersected polygons
-    for poly in unique_polygons:
-        plt.gca().add_patch(plt.Polygon(poly['vertices'], closed=True, facecolor='none', edgecolor='red', linewidth=2))
-        centroid = np.mean(poly['vertices'], axis=0)
-        plt.text(centroid[0], centroid[1], str(poly['iter']), fontsize=12)
-
-    # Plotting trajectory lines
+    print("\nProcessing trajectories to find unique towers...")
     for b in x_interval:
-        y = np.linspace(0, y_max)
+        print(f"\nChecking trajectory for b = {b:.4f}...")
+        path = trace_trajectory(b, n, initial_triangle, initial_angles, phi0)
+
+        if not path or len(path) <= 1:
+            print("  -> Path terminated early or was empty.")
+            continue
+
+        tower_id = frozenset(tuple(sorted(map(tuple, np.round(p['vertices'], 6)))) for p in path)
+
+        if tower_id not in found_towers:
+            print(f"  -> New unique tower found with {len(path)} triangles. Storing for plotting.")
+            found_towers.append(tower_id)
+            tower_data.append((b, path))
+        else:
+            print("  -> Duplicate tower found. Skipping.")
+
+    print("\n------------------------------------")
+    print(f"Found {len(found_towers)} unique towers in total.")
+    if not found_towers:
+        print("No valid towers were generated.")
+        return
+
+    print("Displaying plots...")
+    for b, path in tower_data:
+        fig, ax = plt.subplots(figsize=(10, 10))
+        ax.set_title(f"Tower for trajectory starting near b={b:.2f}")
+        
+        y_max = max(p['vertices'][:,1].max() for p in path)
+
+        for poly in path:
+            ax.add_patch(plt.Polygon(poly['vertices'], closed=True, facecolor='none', edgecolor='red', linewidth=1))
+            centroid = np.mean(poly['vertices'], axis=0)
+            ax.text(centroid[0], centroid[1], str(poly['iter']), fontsize=10)
+        
+        y = np.linspace(0, y_max, 200)
         x_traj = (y + np.tan(phi0) * b) / np.tan(phi0)
-        plt.plot(x_traj, y, color = "blue")
-    
-    plt.axis('scaled')
+        ax.plot(x_traj, y, color="blue", linestyle='--', linewidth=0.7)
+        
+        ax.set_aspect('equal', adjustable='box')
+
     plt.show()
 
 if __name__ == "__main__":
-    alpha, beta, gamma, phi, n = obtain_angles_period()
-    evolution(alpha, beta, gamma, phi, n)
+    # NOTE: Using hardcoded values for execution in a non-interactive environment.
+    # The obtain_angles_period() function is available for interactive use.
+    alpha, beta = 12, 42
+    phi = 50
+    evolution(np.deg2rad(alpha), np.deg2rad(beta), np.deg2rad(180 - alpha - beta),
+              np.deg2rad(phi),  12)
