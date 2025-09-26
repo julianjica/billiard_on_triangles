@@ -28,19 +28,46 @@ def segments_intersect(p1, q1, p2, q2):
     return False
 
 def obtain_angles_period():
-    # Obtaining and transforming angles
-    alpha, beta = [float(x) for x in \
-                   input("Enter two angles of the triangle (in degrees) > ").split(",")]
-    alpha, beta = [x * np.pi / 180 for x in (alpha, beta)]
-    gamma = np.pi - (alpha + beta)
+    print("--- Billiards Trajectory Simulator ---")
+    
+    while True:
+        try:
+            angles_str = input("Enter two angles of the triangle (in degrees), separated by a comma > ")
+            alpha, beta = [float(x.strip()) for x in angles_str.split(",")]
+            if alpha <= 0 or beta <= 0 or alpha + beta >= 180:
+                print("Invalid angles. The two angles must be positive and their sum must be less than 180.")
+                continue
+            break
+        except (ValueError, IndexError):
+            print("Invalid input. Please enter two numbers separated by a comma.")
 
-    # Initial trajectory angle
-    phi = float(input("Enter initial trajectory angle (in degrees) > ")) * np.pi / 180
+    alpha_rad = alpha * np.pi / 180
+    beta_rad = beta * np.pi / 180
+    gamma_rad = np.pi - (alpha_rad + beta_rad)
 
-    # Obtaining number of periods
-    n = int(input("Enter number of periods > "))
+    while True:
+        try:
+            phi_str = input("Enter initial trajectory angle (in degrees) > ")
+            phi = float(phi_str)
+            break
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+    
+    phi_rad = phi * np.pi / 180
 
-    return (alpha, beta, gamma, phi, n)
+    while True:
+        try:
+            n_str = input("Enter number of reflections > ")
+            n = int(n_str)
+            if n <= 0:
+                print("Number of reflections must be a positive integer.")
+                continue
+            break
+        except ValueError:
+            print("Invalid input. Please enter an integer.")
+
+    print("------------------------------------")
+    return (alpha_rad, beta_rad, gamma_rad, phi_rad, n)
 
 def evolution(alpha, beta, gamma, phi, n):
     # First triangle
@@ -153,7 +180,5 @@ def evolution(alpha, beta, gamma, phi, n):
     plt.show()
 
 if __name__ == "__main__":
-    #print(obtain_angles_period())
-    alpha, beta = 30, 120
-    evolution(alpha * np.pi / 180, beta * np.pi / 180, (180 - alpha - beta)* np.pi / 180,
-              np.pi / 3,  12)
+    alpha, beta, gamma, phi, n = obtain_angles_period()
+    evolution(alpha, beta, gamma, phi, n)
