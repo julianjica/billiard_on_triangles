@@ -45,6 +45,8 @@ def evolution(alpha, beta, gamma, phi, n):
                 v = v / np.linalg.norm(v)
                 new_triangle = np.vstack((C, A, B + 2 * np.linalg.norm(A - B) * np.sin(alpha) * v))
                     
+                centroid = np.mean(new_triangle, axis=0)
+                plt.text(centroid[0], centroid[1], str(ii + 1), fontsize=12)
                 plt.gca().add_patch(plt.Polygon(new_triangle, closed=True, facecolor='none',
                                                 edgecolor='red', linewidth=2))
                 m.append((new_triangle, (gamma, alpha, beta), np.pi+alpha-phi))
@@ -53,6 +55,8 @@ def evolution(alpha, beta, gamma, phi, n):
                 v = v / np.linalg.norm(v)
                 new_triangle = np.vstack((B, C, A + 2 * np.linalg.norm(A - B) * np.sin(beta) * v))
 
+                centroid = np.mean(new_triangle, axis=0)
+                plt.text(centroid[0], centroid[1], str(ii + 1), fontsize=12)
                 plt.gca().add_patch(plt.Polygon(new_triangle, closed=True, facecolor='none',
                                                 edgecolor='red', linewidth=2))
                 m.append((new_triangle, (beta, gamma, alpha), np.pi-beta-phi))
@@ -71,7 +75,7 @@ def evolution(alpha, beta, gamma, phi, n):
         y = np.linspace(0, y_max)
         x = (y + np.tan(phi0) * b) / np.tan(phi0)
         plt.plot(x, y, color = "blue")
-
+    plt.axis('scaled')
     plt.show()
 if __name__ == "__main__":
     #print(obtain_angles_period())
