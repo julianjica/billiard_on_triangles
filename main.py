@@ -61,6 +61,9 @@ def reflect_point(p, p1, p2):
     # Reflect point p across the line defined by p1 and p2
     dx = p2[0] - p1[0]
     dy = p2[1] - p1[1]
+    # Handle case where p1 and p2 are the same point
+    if dx == 0 and dy == 0:
+        return p
     a = (dx**2 - dy**2) / (dx**2 + dy**2)
     b = 2 * dx * dy / (dx**2 + dy**2)
     x_reflected = a * (p[0] - p1[0]) + b * (p[1] - p1[1]) + p1[0]
@@ -117,32 +120,26 @@ def evolution(alpha, beta, gamma, phi, n):
     found_towers = []
     tower_data = []
 
-    print("\nProcessing trajectories to find unique towers...")
     for b in x_interval:
-        print(f"\nChecking trajectory for b = {b:.4f}...")
         path = trace_trajectory(b, n, initial_triangle, initial_angles, phi0)
 
         if not path or len(path) <= 1:
-            print("  -> Path terminated early or was empty.")
             continue
 
         tower_id = frozenset(tuple(sorted(map(tuple, np.round(p['vertices'], 6)))) for p in path)
 
         if tower_id not in found_towers:
-            print(f"  -> New unique tower found with {len(path)} triangles. Storing for plotting.")
             found_towers.append(tower_id)
             tower_data.append((b, path))
-        else:
-            print("  -> Duplicate tower found. Skipping.")
 
-    print("\n------------------------------------")
-    print(f"Found {len(found_towers)} unique towers in total.")
-    if not found_towers:
-        print("No valid towers were generated.")
+    if not tower_data:
+        print("\nNo unique towers were found for the given parameters.")
         return
 
-    print("Displaying plots...")
-    for b, path in tower_data:
+    print(f"\nFound {len(tower_data)} unique towers.")
+
+    for i, (b, path) in enumerate(tower_data):
+        print(f"\nPlotting {i+1}/{len(tower_data)} unique tower... (Close plot window to continue, or press Ctrl+C to exit)")
         fig, ax = plt.subplots(figsize=(10, 10))
         ax.set_title(f"Tower for trajectory starting near b={b:.2f}")
         
@@ -158,8 +155,7 @@ def evolution(alpha, beta, gamma, phi, n):
         ax.plot(x_traj, y, color="blue", linestyle='--', linewidth=0.7)
         
         ax.set_aspect('equal', adjustable='box')
-
-    plt.show()
+        plt.show()
 
 if __name__ == "__main__":
     # NOTE: Using hardcoded values for execution in a non-interactive environment.
@@ -167,4 +163,4 @@ if __name__ == "__main__":
     alpha, beta = 12, 42
     phi = 50
     evolution(np.deg2rad(alpha), np.deg2rad(beta), np.deg2rad(180 - alpha - beta),
-              np.deg2rad(phi),  12)
+             np.deg2rad(phi),  12)
