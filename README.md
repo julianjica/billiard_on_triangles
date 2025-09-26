@@ -22,3 +22,7 @@ The program will prompt you to enter the following information:
 *   **Number of reflections:** The number of times the path will be reflected.
 
 The program will then generate a plot showing the sequence of reflected triangles. Only the triangles that are crossed by the trajectory path are shown. The number inside each triangle indicates the reflection number.
+
+## Example Output
+Using as angles 30, 120. Trajectory angle of 60, and 12 periods.
+![Example Output](example.png)
