@@ -22,6 +22,9 @@ def evolution(alpha, beta, gamma, phi, n):
     B = np.array([np.sin(gamma) / (np.sin(alpha) + np.sin(beta) + np.sin(gamma)), 0])
     C = np.sin(beta) / (np.sin(alpha) + np.sin(beta) + np.sin(gamma)) \
             * np.array([np.cos(alpha), np.sin(alpha)])
+    # Storing for later
+    x, phi0 = B[0], phi
+
     triangle = np.vstack((A,B,C))
     plt.figure(111)
     plt.gca().add_patch(plt.Polygon(triangle, closed=True, facecolor='none',
@@ -55,6 +58,19 @@ def evolution(alpha, beta, gamma, phi, n):
                 m.append((new_triangle, (beta, gamma, alpha), np.pi-beta-phi))
 
             triangle_list.append(m)
+
+    # Finding y_max to plot trajectory lines
+    y_max = 0
+    for m in triangle_list:
+        for triangle, _, _ in m:
+            y_max = max(y_max, max(triangle[:,1]))
+
+    # Plotting trajectory lines
+    x_interval = np.linspace(0, x, 10)
+    for b in x_interval:
+        y = np.linspace(0, y_max)
+        x = (y + np.tan(phi0) * b) / np.tan(phi0)
+        plt.plot(x, y, color = "blue")
 
     plt.show()
 if __name__ == "__main__":
