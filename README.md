@@ -1,6 +1,6 @@
 # Billiards Trajectory Simulator
 
-This program simulates and visualizes the trajectory of a billiard ball inside a triangle, using the concept of unfolding the path into a straight line through a series of reflected triangles.
+This program simulates and visualizes the trajectory of a billiard ball inside a triangle. It uses the concept of "unfolding" the path by reflecting the triangle across the sides the trajectory hits, which turns the path into a straight line.
 
 ## How to Run
 
@@ -15,14 +15,36 @@ This program simulates and visualizes the trajectory of a billiard ball inside a
 
 ## How it Works
 
-The program will prompt you to enter the following information:
+The program first prompts you to enter the triangle angles and trajectory parameters.
 
-*   **Two angles of the triangle (in degrees):** Enter two angles of the initial triangle, separated by a comma. The angles must be positive and their sum must be less than 180.
-*   **Initial trajectory angle (in degrees):** This is the angle of the billiard ball's path with respect to the base of the triangle.
-*   **Number of reflections:** The number of times the path will be reflected.
+It then traces multiple trajectories across the triangle. For each trajectory, it generates the corresponding path of reflected triangles (a "tower"). It has several important features:
 
-The program will then generate a plot showing the sequence of reflected triangles. Only the triangles that are crossed by the trajectory path are shown. The number inside each triangle indicates the reflection number.
+- **Path Tracing**: It follows each trajectory step-by-step, reflecting the triangle across the specific edge the path exits, ensuring the tower is built correctly.
+- **Degeneracy Detection**: It identifies and discards "degenerate" towers, which are cases where the trajectory passes exactly through a vertex of a reflected triangle.
+- **Uniqueness**: It analyzes all the valid, non-degenerate towers and identifies the ones that are structurally unique.
 
-## Example Output
-Using as angles 30, 120. Trajectory angle of 60, and 12 periods.
-![Example Output](example.png)
+### Output
+
+The program will first print a summary of how many unique, non-degenerate towers it found.
+
+It will then display the plots for each unique tower one by one. You must close a plot window to proceed to the next one.
+
+Additionally, it will save each tower's plot as a PNG file in the project directory (e.g., `tower_1.png`, `tower_2.png`, etc.).
+
+## Example Towers
+
+Below are the 10 unique, non-degenerate towers found for the default case (a 30-120-30 degree triangle with a 60-degree trajectory angle).
+
+*(Note: The number of towers generated will vary depending on the input parameters.)*
+
+| Tower 1 | Tower 2 |
+| :---: | :---: |
+| ![Tower 1](images/tower_1.png) | ![Tower 2](images/tower_2.png) |
+| **Tower 3** | **Tower 4** |
+| ![Tower 3](images/tower_3.png) | ![Tower 4](images/tower_4.png) |
+| **Tower 5** | **Tower 6** |
+| ![Tower 5](images/tower_5.png) | ![Tower 6](images/tower_6.png) |
+| **Tower 7** | **Tower 8** |
+| ![Tower 7](images/tower_7.png) | ![Tower 8](images/tower_8.png) |
+| **Tower 9** | **Tower 10** |
+| ![Tower 9](images/tower_9.png) | ![Tower 10](images/tower_10.png) |
