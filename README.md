@@ -2,26 +2,36 @@
 
 This program simulates and visualizes the trajectory of a billiard ball inside a triangle. It uses the concept of "unfolding" the path by reflecting the triangle across the sides the trajectory hits, which turns the path into a straight line.
 
-## How to Run
+## Installation
 
-1.  Make sure you have Python 3 and the `matplotlib` and `numpy` libraries installed.
-    ```bash
-    pip install matplotlib numpy
-    ```
-2.  Run the program from your terminal:
-    ```bash
-    python3 main.py
-    ```
+Make sure you have Python 3 and the `matplotlib` and `numpy` libraries installed.
 
-## How it Works
+```bash
+pip install matplotlib numpy
+```
 
-The program first prompts you to enter the triangle angles and trajectory parameters.
+## Usage
 
-It then traces multiple trajectories across the triangle. For each trajectory, it generates the corresponding path of reflected triangles (a "tower"). It has several important features:
+Run the program from your terminal:
 
-- **Path Tracing**: It follows each trajectory step-by-step, reflecting the triangle across the specific edge the path exits, ensuring the tower is built correctly.
-- **Degeneracy Detection**: It identifies and discards "degenerate" towers, which are cases where the trajectory passes exactly through a vertex of a reflected triangle.
-- **Uniqueness**: It analyzes all the valid, non-degenerate towers and identifies the ones that are structurally unique.
+```bash
+python3 main.py
+```
+
+The program will launch an interactive command-line interface (CLI) that will guide you through the required inputs:
+
+1.  **Enter two angles of the triangle...**: Provide two angles in degrees, separated by a comma (e.g., `30, 120`).
+2.  **Enter initial trajectory angle...**: Provide the starting angle of the trajectory in degrees (e.g., `50`).
+3.  **Enter number of reflections...**: Enter a positive integer for the number of reflections (e.g., `12`).
+4.  **Autosave plots...**: Choose whether to save the output plots as PNG files by entering `yes` or `no`.
+
+### The Simulation Process
+
+Once the inputs are provided, the simulator traces multiple trajectories and performs several key functions:
+
+- **Path Tracing**: It follows each trajectory step-by-step, reflecting the triangle across the specific edge the path exits.
+- **Degeneracy Detection**: It identifies and discards "degenerate" towers, where the trajectory passes exactly through a vertex.
+- **Uniqueness**: It analyzes all valid paths to identify the structurally unique "towers".
 
 ### Output
 
@@ -29,7 +39,7 @@ The program will first print a summary of how many unique, non-degenerate towers
 
 It will then display the plots for each unique tower one by one. You must close a plot window to proceed to the next one.
 
-Additionally, it will save each tower's plot as a PNG file in the `images/` directory (e.g., `images/tower_1.png`).
+If you enable autosaving, it will also save each tower's plot as a PNG file in the `images/` directory (e.g., `images/tower_1.png`).
 
 ## Example Towers
 

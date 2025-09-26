@@ -37,8 +37,19 @@ def obtain_angles_period():
         except ValueError:
             print("Invalid input. Please enter an integer.")
 
+    while True:
+        save_str = input("Autosave plots to PNG files? (yes/no) > ").lower().strip()
+        if save_str in ["yes", "y"]:
+            should_save = True
+            break
+        elif save_str in ["no", "n"]:
+            should_save = False
+            break
+        else:
+            print("Invalid input. Please enter 'yes' or 'no'.")
+
     print("------------------------------------")
-    return (alpha_rad, beta_rad, gamma_rad, phi_rad, n)
+    return (alpha_rad, beta_rad, gamma_rad, phi_rad, n, should_save)
 
 def get_line_segment_intersection(p1, p2, p3, p4):
     x1, y1 = p1
@@ -53,7 +64,6 @@ def get_line_segment_intersection(p1, p2, p3, p4):
     t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
     u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den
 
-    # Intersection must be strictly within the segment for a clean exit
     if 1e-9 < t < 1-1e-9 and u > 1e-9:
         return np.array([x1 + t * (x2 - x1), y1 + t * (y2 - y1)])
     return None
@@ -76,14 +86,13 @@ def trace_trajectory(b, n, initial_triangle, initial_angles, phi0):
 
     tan_phi0 = np.tan(phi0)
     if abs(tan_phi0) < 1e-9:
-        return [] # Horizontal trajectory not handled
+        return []
 
     traj_p1 = np.array([b, 0])
-    traj_p2 = np.array([(2000 + tan_phi0 * b) / tan_phi0, 2000]) # Use a very long line
+    traj_p2 = np.array([(2000 + tan_phi0 * b) / tan_phi0, 2000])
 
     for i in range(n):
         A, B, C = current_triangle
-        
         intersect_ac = get_line_segment_intersection(A, C, traj_p1, traj_p2)
         intersect_bc = get_line_segment_intersection(B, C, traj_p1, traj_p2)
 
@@ -107,7 +116,7 @@ def is_degenerate(path, b, tan_phi0):
                 return True
     return False
 
-def evolution(alpha, beta, gamma, phi, n):
+def evolution(alpha, beta, gamma, phi, n, should_save):
     A = np.array([0,0])
     B = np.array([np.sin(gamma) / (np.sin(alpha) + np.sin(beta) + np.sin(gamma)), 0])
     C = np.sin(beta) / (np.sin(alpha) + np.sin(beta) + np.sin(gamma)) * np.array([np.cos(alpha), np.sin(alpha)])
@@ -153,25 +162,25 @@ def evolution(alpha, beta, gamma, phi, n):
         for poly in path:
             ax.add_patch(plt.Polygon(poly['vertices'], closed=True, facecolor='none', edgecolor='red', linewidth=1))
             centroid = np.mean(poly['vertices'], axis=0)
-            ax.text(centroid[0], centroid[1], str(poly['iter']), fontsize=10)
+            ax.text( centroid[0], centroid[1], str(poly['iter']), fontsize=10)
         
         y = np.linspace(0, y_max, 200)
         x_traj = (y + tan_phi0 * b) / tan_phi0
         ax.plot(x_traj, y, color="blue", linestyle='--', linewidth=0.7)
         
         ax.set_aspect('equal', adjustable='box')
-
-        figure_filename = f"images/tower_{i+1}.png"
-        try:
-            fig.savefig(figure_filename)
-            print(f"  -> Saved tower plot to {figure_filename}")
-        except Exception as e:
-            print(f"  -> Error saving figure: {e}")
+        
+        if should_save:
+            figure_filename = f"images/tower_{i+1}.png"
+            try:
+                fig.savefig(figure_filename)
+                print(f"  -> Saved tower plot to {figure_filename}")
+            except Exception as e:
+                print(f"  -> Error saving figure: {e}")
 
         plt.show()
 
 if __name__ == "__main__":
-    # NOTE: Using hardcoded values for execution in a non-interactive environment.
-    alpha, beta = 12, 42
-    evolution(np.deg2rad(alpha), np.deg2rad(beta), np.deg2rad(180 - alpha - beta),
-              np.deg2rad(50),  12)
+    # Obtain parameters from the user interactively
+    alpha, beta, gamma, phi, n, should_save = obtain_angles_period()
+    evolution(alpha, beta, gamma, phi, n, should_save)
