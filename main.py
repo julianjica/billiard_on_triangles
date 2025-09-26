@@ -47,21 +47,20 @@ def get_line_segment_intersection(p1, p2, p3, p4):
     x4, y4 = p4
 
     den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-    if den == 0:
-        return None  # Parallel
+    if abs(den) < 1e-9:
+        return None  # Parallel or collinear
 
     t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
     u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den
 
-    if 0 < t < 1 and u > 0: # Intersection must be strictly within the segment
+    # Intersection must be strictly within the segment for a clean exit
+    if 1e-9 < t < 1-1e-9 and u > 1e-9:
         return np.array([x1 + t * (x2 - x1), y1 + t * (y2 - y1)])
     return None
 
 def reflect_point(p, p1, p2):
-    # Reflect point p across the line defined by p1 and p2
     dx = p2[0] - p1[0]
     dy = p2[1] - p1[1]
-    # Handle case where p1 and p2 are the same point
     if dx == 0 and dy == 0:
         return p
     a = (dx**2 - dy**2) / (dx**2 + dy**2)
@@ -76,37 +75,37 @@ def trace_trajectory(b, n, initial_triangle, initial_angles, phi0):
     current_angles = initial_angles
 
     tan_phi0 = np.tan(phi0)
-    if tan_phi0 == 0:
+    if abs(tan_phi0) < 1e-9:
         return [] # Horizontal trajectory not handled
 
-    # Define a very long line for the trajectory to ensure it crosses the whole figure
     traj_p1 = np.array([b, 0])
-    traj_p2 = np.array([(1000 + tan_phi0 * b) / tan_phi0, 1000])
+    traj_p2 = np.array([(2000 + tan_phi0 * b) / tan_phi0, 2000]) # Use a very long line
 
     for i in range(n):
         A, B, C = current_triangle
-        alpha, beta, gamma = current_angles
-
-        # Check for exit point on AC
+        
         intersect_ac = get_line_segment_intersection(A, C, traj_p1, traj_p2)
-        # Check for exit point on BC
         intersect_bc = get_line_segment_intersection(B, C, traj_p1, traj_p2)
 
         if intersect_ac is not None:
             B_reflected = reflect_point(B, A, C)
             current_triangle = np.array([C, A, B_reflected])
-            current_angles = (gamma, alpha, beta)
             path.append({'vertices': current_triangle, 'iter': i + 1})
         elif intersect_bc is not None:
             A_reflected = reflect_point(A, B, C)
             current_triangle = np.array([B, C, A_reflected])
-            current_angles = (beta, gamma, alpha)
             path.append({'vertices': current_triangle, 'iter': i + 1})
         else:
-            # Path does not exit through AC or BC, terminates
             break
-            
     return path
+
+def is_degenerate(path, b, tan_phi0):
+    m = tan_phi0
+    for poly in path:
+        for vx, vy in poly['vertices']:
+            if abs(vy - m * (vx - b)) < 1e-9:
+                return True
+    return False
 
 def evolution(alpha, beta, gamma, phi, n):
     A = np.array([0,0])
@@ -119,11 +118,17 @@ def evolution(alpha, beta, gamma, phi, n):
     x_interval = np.linspace(0, x, 100)
     found_towers = []
     tower_data = []
+    tan_phi0 = np.tan(phi0)
 
+    print("\nProcessing trajectories to find unique, non-degenerate towers...")
     for b in x_interval:
         path = trace_trajectory(b, n, initial_triangle, initial_angles, phi0)
 
         if not path or len(path) <= 1:
+            continue
+
+        if is_degenerate(path, b, tan_phi0):
+            print(f"  -> Discarding degenerate tower for b={b:.4f}")
             continue
 
         tower_id = frozenset(tuple(sorted(map(tuple, np.round(p['vertices'], 6)))) for p in path)
@@ -133,17 +138,17 @@ def evolution(alpha, beta, gamma, phi, n):
             tower_data.append((b, path))
 
     if not tower_data:
-        print("\nNo unique towers were found for the given parameters.")
+        print("\nNo unique, non-degenerate towers were found.")
         return
 
-    print(f"\nFound {len(tower_data)} unique towers.")
+    print(f"\nFound {len(tower_data)} unique, non-degenerate towers.")
 
     for i, (b, path) in enumerate(tower_data):
         print(f"\nPlotting {i+1}/{len(tower_data)} unique tower... (Close plot window to continue, or press Ctrl+C to exit)")
         fig, ax = plt.subplots(figsize=(10, 10))
         ax.set_title(f"Tower for trajectory starting near b={b:.2f}")
         
-        y_max = max(p['vertices'][:,1].max() for p in path)
+        y_max = max(p['vertices'][:,1].max() for p in path) if path else 0
 
         for poly in path:
             ax.add_patch(plt.Polygon(poly['vertices'], closed=True, facecolor='none', edgecolor='red', linewidth=1))
@@ -151,16 +156,22 @@ def evolution(alpha, beta, gamma, phi, n):
             ax.text(centroid[0], centroid[1], str(poly['iter']), fontsize=10)
         
         y = np.linspace(0, y_max, 200)
-        x_traj = (y + np.tan(phi0) * b) / np.tan(phi0)
+        x_traj = (y + tan_phi0 * b) / tan_phi0
         ax.plot(x_traj, y, color="blue", linestyle='--', linewidth=0.7)
         
         ax.set_aspect('equal', adjustable='box')
+
+        figure_filename = f"images/tower_{i+1}.png"
+        try:
+            fig.savefig(figure_filename)
+            print(f"  -> Saved tower plot to {figure_filename}")
+        except Exception as e:
+            print(f"  -> Error saving figure: {e}")
+
         plt.show()
 
 if __name__ == "__main__":
     # NOTE: Using hardcoded values for execution in a non-interactive environment.
-    # The obtain_angles_period() function is available for interactive use.
     alpha, beta = 12, 42
-    phi = 50
     evolution(np.deg2rad(alpha), np.deg2rad(beta), np.deg2rad(180 - alpha - beta),
-             np.deg2rad(phi),  12)
+              np.deg2rad(50),  12)
