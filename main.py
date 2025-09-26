@@ -127,7 +127,8 @@ def evolution(alpha, beta, gamma, phi, n):
     unique_polygons = []
     seen_ids = set()
     for poly in intersected_polygons:
-        poly_id = tuple(sorted(tuple(map(tuple, poly['vertices']))))
+        rounded_vertices = np.round(poly['vertices'], decimals=6)
+        poly_id = tuple(sorted(tuple(map(tuple, rounded_vertices))))
         if poly_id not in seen_ids:
             unique_polygons.append(poly)
             seen_ids.add(poly_id)
@@ -153,6 +154,6 @@ def evolution(alpha, beta, gamma, phi, n):
 
 if __name__ == "__main__":
     #print(obtain_angles_period())
-    alpha, beta = 45, 45
+    alpha, beta = 30, 120
     evolution(alpha * np.pi / 180, beta * np.pi / 180, (180 - alpha - beta)* np.pi / 180,
-              np.pi / 2,  12)
+              np.pi / 3,  12)
