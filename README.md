@@ -23,7 +23,7 @@ The program will launch an interactive command-line interface (CLI) that will gu
 1.  **Enter two angles of the triangle...**: Provide two angles in degrees, separated by a comma (e.g., `30, 120`).
 2.  **Enter initial trajectory angle...**: Provide the starting angle of the trajectory in degrees (e.g., `50`).
 3.  **Enter number of reflections...**: Enter a positive integer for the number of reflections (e.g., `12`).
-4.  **Autosave plots...**: Choose whether to save the output plots as PNG files by entering `yes` or `no`.
+4.  **Autosave plots**: Choose whether to autosave the output plots as PNG files by entering `yes` or `no`.
 
 ### The Simulation Process
 
